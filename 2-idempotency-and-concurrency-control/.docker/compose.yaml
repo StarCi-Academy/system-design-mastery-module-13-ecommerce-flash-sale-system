@@ -1,0 +1,53 @@
+name: 2-idempotency-and-concurrency-control
+# Vi: Docker Compose stack cho bài học Tính Idempotency và Kiểm soát đồng thời.
+# (EN: Docker Compose stack for lesson Idempotency and Concurrency Control.)
+
+services:
+  # NestJS API Service
+  api:
+    container_name: 2-idempotency-and-concurrency-control-api
+    image: starciacademy/idempotency-and-concurrency-control-checkout-service:latest
+    ports:
+      # Ánh xạ cổng host 3000 -> container 3000 (HTTP API).
+      # (EN: Map host port 3000 -> container 3000 (HTTP API).)
+      - "3000:3000"
+    environment:
+      - PORT=3000
+      - POSTGRES_HOST=db
+      - POSTGRES_PORT=5432
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=checkout_service
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+    networks:
+      - 2-idempotency-and-concurrency-control-network
+    depends_on:
+      - db
+      - redis
+
+  # Postgres Database
+  db:
+    image: postgres:16-alpine
+    container_name: 2-idempotency-and-concurrency-control-db
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=checkout_service
+    ports:
+      - "5432:5432"
+    networks:
+      - 2-idempotency-and-concurrency-control-network
+
+  # Redis idempotency key registry
+  redis:
+    image: redis:7-alpine
+    container_name: 2-idempotency-and-concurrency-control-redis
+    ports:
+      - "6379:6379"
+    networks:
+      - 2-idempotency-and-concurrency-control-network
+
+networks:
+  2-idempotency-and-concurrency-control-network:
+    name: 2-idempotency-and-concurrency-control-network
