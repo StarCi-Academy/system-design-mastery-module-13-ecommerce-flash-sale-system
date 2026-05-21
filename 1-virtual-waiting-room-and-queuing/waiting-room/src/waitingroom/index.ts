@@ -1,9 +1,3 @@
-export {
-    WaitingroomModule,
-} from "./waitingroom.module"
-export {
-    WaitingroomService,
-} from "./waitingroom.service"
-export {
-    WaitingroomController,
-} from "./waitingroom.controller"
+export * from "./waitingroom.controller"
+export * from "./waitingroom.module"
+export * from "./waitingroom.service"

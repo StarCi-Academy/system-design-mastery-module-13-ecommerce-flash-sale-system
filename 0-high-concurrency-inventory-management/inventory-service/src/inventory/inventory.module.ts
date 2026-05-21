@@ -5,25 +5,26 @@ import {
     TypeOrmModule,
 } from "@nestjs/typeorm"
 import {
-    InventoryEntity,
-} from "./entities"
-import {
-    InventoryService,
-} from "./inventory.service"
+    InventoryItemEntity,
+    InventoryLedgerEntity,
+} from "../entities"
 import {
     InventoryController,
 } from "./inventory.controller"
+import {
+    InventorySeedService,
+} from "./inventory-seed.service"
+import {
+    InventoryService,
+} from "./inventory.service"
 
 /**
- * Feature Module quản lý bài học High-Concurrency Inventory Management.
- * (EN: Feature Module managing lesson High-Concurrency Inventory Management.)
+ * Feature module — inventory Postgres + Redis Lua.
+ * (EN: Feature module — inventory Postgres + Redis Lua.)
  */
 @Module({
-    imports: [
-        TypeOrmModule.forFeature([InventoryEntity]),
-    ],
+    imports: [TypeOrmModule.forFeature([InventoryItemEntity, InventoryLedgerEntity])],
     controllers: [InventoryController],
-    providers: [InventoryService],
-    exports: [InventoryService],
+    providers: [InventoryService, InventorySeedService],
 })
 export class InventoryModule {}

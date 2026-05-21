@@ -5,11 +5,15 @@ import {
     Post,
 } from "@nestjs/common"
 import {
+    CreateOrderDto,
+} from "./dto"
+import {
     CheckoutService,
 } from "./checkout.service"
 
 /**
- * REST controller exposing idempotent checkout endpoints.
+ * HTTP controller — idempotent checkout (lesson 2).
+ * (EN: HTTP controller — idempotent checkout (lesson 2).)
  */
 @Controller("api/checkout")
 export class CheckoutController {
@@ -17,15 +21,23 @@ export class CheckoutController {
         private readonly service: CheckoutService,
     ) {}
 
+    /**
+     * Logic — đặt hàng với Idempotency-Key (chống double-submit).
+     * Code — POST order + header → placeOrder.
+     * (EN Logic: Place order with Idempotency-Key header.)
+     * (EN Code: POST order → placeOrder.)
+     */
     @Post("order")
-    checkout(
-        @Headers("idempotency-key") idempotencyKey = "key_test_100",
-        @Body() body: { userId?: string; productId?: number },
-    ) {
-        return this.service.checkout(
-            idempotencyKey,
-            body.userId ?? "usr_99",
-            body.productId ?? 1,
+    placeOrder(
+        @Headers("idempotency-key") idempotencyKey: string | undefined,
+        @Body() body: CreateOrderDto,
+    ): ReturnType<CheckoutService["placeOrder"]> {
+        const key = idempotencyKey?.trim() || "missing-idempotency-key"
+        return this.service.placeOrder(
+            key,
+            body.userId,
+            body.productSku,
+            body.quantity,
         )
     }
 }

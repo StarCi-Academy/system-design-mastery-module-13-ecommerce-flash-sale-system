@@ -1,3 +1,1 @@
-export {
-    CreateWaitingroomDto,
-} from "./create.dto"
+export * from "./admit-waiting-room.dto"

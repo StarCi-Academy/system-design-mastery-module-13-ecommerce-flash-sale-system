@@ -6,10 +6,12 @@ services:
   # NestJS API Service
   api:
     container_name: 0-high-concurrency-inventory-management-api
-    image: starciacademy/high-concurrency-inventory-management-inventory-service:latest
+    build:
+      context: ../inventory-service
+      dockerfile: Dockerfile
     ports:
-      # Ánh xạ cổng host 3000 -> container 3000 (HTTP API).
-      # (EN: Map host port 3000 -> container 3000 (HTTP API).)
+      # Ánh xạ cổng host 3000 → container 3000 (HTTP API).
+      # (EN: Map host port 3000 → container 3000 (HTTP API).)
       - "3000:3000"
     environment:
       - PORT=3000
@@ -26,7 +28,8 @@ services:
       - db
       - redis
 
-  # Postgres Database
+  # Postgres — ledger / orders (TypeORM).
+  # (EN: Postgres — ledger / orders (TypeORM).)
   db:
     image: postgres:16-alpine
     container_name: 0-high-concurrency-inventory-management-db
@@ -35,15 +38,20 @@ services:
       - POSTGRES_PASSWORD=postgres
       - POSTGRES_DB=inventory_service
     ports:
+      # Postgres host 5432 (lab local).
+      # (EN: Postgres host port 5432 (local lab).)
       - "5432:5432"
     networks:
       - 0-high-concurrency-inventory-management-network
 
-  # Redis atomic stock counter
+  # Redis — counter / queue / idempotency registry.
+  # (EN: Redis — counter / queue / idempotency registry.)
   redis:
     image: redis:7-alpine
     container_name: 0-high-concurrency-inventory-management-redis
     ports:
+      # Redis host 6379.
+      # (EN: Redis host port 6379.)
       - "6379:6379"
     networks:
       - 0-high-concurrency-inventory-management-network

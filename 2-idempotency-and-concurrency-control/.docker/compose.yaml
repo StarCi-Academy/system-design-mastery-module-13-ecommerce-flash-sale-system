@@ -1,15 +1,17 @@
 name: 2-idempotency-and-concurrency-control
-# Vi: Docker Compose stack cho bài học Tính Idempotency và Kiểm soát đồng thời.
+# Vi: Docker Compose stack cho bài học Idempotency và Kiểm soát đồng thời.
 # (EN: Docker Compose stack for lesson Idempotency and Concurrency Control.)
 
 services:
   # NestJS API Service
   api:
     container_name: 2-idempotency-and-concurrency-control-api
-    image: starciacademy/idempotency-and-concurrency-control-checkout-service:latest
+    build:
+      context: ../checkout-service
+      dockerfile: Dockerfile
     ports:
-      # Ánh xạ cổng host 3000 -> container 3000 (HTTP API).
-      # (EN: Map host port 3000 -> container 3000 (HTTP API).)
+      # Ánh xạ cổng host 3000 → container 3000 (HTTP API).
+      # (EN: Map host port 3000 → container 3000 (HTTP API).)
       - "3000:3000"
     environment:
       - PORT=3000
@@ -26,7 +28,8 @@ services:
       - db
       - redis
 
-  # Postgres Database
+  # Postgres — ledger / orders (TypeORM).
+  # (EN: Postgres — ledger / orders (TypeORM).)
   db:
     image: postgres:16-alpine
     container_name: 2-idempotency-and-concurrency-control-db
@@ -35,15 +38,20 @@ services:
       - POSTGRES_PASSWORD=postgres
       - POSTGRES_DB=checkout_service
     ports:
+      # Postgres host 5432 (lab local).
+      # (EN: Postgres host port 5432 (local lab).)
       - "5432:5432"
     networks:
       - 2-idempotency-and-concurrency-control-network
 
-  # Redis idempotency key registry
+  # Redis — counter / queue / idempotency registry.
+  # (EN: Redis — counter / queue / idempotency registry.)
   redis:
     image: redis:7-alpine
     container_name: 2-idempotency-and-concurrency-control-redis
     ports:
+      # Redis host 6379.
+      # (EN: Redis host port 6379.)
       - "6379:6379"
     networks:
       - 2-idempotency-and-concurrency-control-network

@@ -1,3 +1,1 @@
-export {
-    CreateInventoryDto,
-} from "./create.dto"
+export * from "./decrement-inventory.dto"

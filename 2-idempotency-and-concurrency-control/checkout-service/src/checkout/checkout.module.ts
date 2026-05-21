@@ -5,25 +5,25 @@ import {
     TypeOrmModule,
 } from "@nestjs/typeorm"
 import {
-    CheckoutEntity,
-} from "./entities"
-import {
-    CheckoutService,
-} from "./checkout.service"
+    OrderEntity,
+} from "../entities"
 import {
     CheckoutController,
 } from "./checkout.controller"
+import {
+    CheckoutSeedService,
+} from "./checkout-seed.service"
+import {
+    CheckoutService,
+} from "./checkout.service"
 
 /**
- * Feature Module quản lý bài học Idempotency and Concurrency Control.
- * (EN: Feature Module managing lesson Idempotency and Concurrency Control.)
+ * Feature module — checkout Postgres + Redis idempotency.
+ * (EN: Feature module — checkout Postgres + Redis idempotency.)
  */
 @Module({
-    imports: [
-        TypeOrmModule.forFeature([CheckoutEntity]),
-    ],
+    imports: [TypeOrmModule.forFeature([OrderEntity])],
     controllers: [CheckoutController],
-    providers: [CheckoutService],
-    exports: [CheckoutService],
+    providers: [CheckoutService, CheckoutSeedService],
 })
 export class CheckoutModule {}

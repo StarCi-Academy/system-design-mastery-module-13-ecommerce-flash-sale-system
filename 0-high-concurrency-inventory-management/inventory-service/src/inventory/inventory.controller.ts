@@ -6,11 +6,15 @@ import {
     Post,
 } from "@nestjs/common"
 import {
+    DecrementInventoryDto,
+} from "./dto"
+import {
     InventoryService,
 } from "./inventory.service"
 
 /**
- * REST controller exposing flash-sale inventory endpoints.
+ * HTTP controller — trừ kho Redis vs Postgres (lesson 0).
+ * (EN: HTTP controller — Redis vs Postgres decrement (lesson 0).)
  */
 @Controller("api/inventory")
 export class InventoryController {
@@ -18,18 +22,42 @@ export class InventoryController {
         private readonly service: InventoryService,
     ) {}
 
-    @Post("seed")
-    seed(@Body() body: { productSku?: string; quantity?: number }) {
-        return this.service.seed(body.productSku ?? "IPHONE15", body.quantity ?? 100)
-    }
-
+    /**
+     * Logic — trừ kho nhanh bằng Redis Lua.
+     * Code — POST decrement/redis → decrementRedis.
+     * (EN Logic: Fast decrement via Redis Lua.)
+     * (EN Code: POST decrement/redis.)
+     */
     @Post("decrement/redis")
-    decrement(@Body() body: { productSku?: string; quantity?: number }) {
-        return this.service.decrement(body.productSku ?? "IPHONE15", body.quantity ?? 1)
+    decrementRedis(
+        @Body() body: DecrementInventoryDto,
+    ): ReturnType<InventoryService["decrementRedis"]> {
+        return this.service.decrementRedis(body.productSku, body.quantity)
     }
 
-    @Get("status/:productSku")
-    getStatus(@Param("productSku") productSku: string) {
-        return this.service.getStatus(productSku)
+    /**
+     * Logic — trừ kho Postgres pessimistic (so sánh).
+     * Code — POST decrement/db → decrementDb.
+     * (EN Logic: Pessimistic DB decrement for comparison.)
+     * (EN Code: POST decrement/db.)
+     */
+    @Post("decrement/db")
+    decrementDb(
+        @Body() body: DecrementInventoryDto,
+    ): ReturnType<InventoryService["decrementDb"]> {
+        return this.service.decrementDb(body.productSku, body.quantity)
+    }
+
+    /**
+     * Logic — xem tồn Redis vs DB.
+     * Code — GET stock/:sku → getStock.
+     * (EN Logic: Inspect Redis vs DB stock.)
+     * (EN Code: GET stock/:sku.)
+     */
+    @Get("stock/:sku")
+    getStock(
+        @Param("sku") sku: string,
+    ): ReturnType<InventoryService["getStock"]> {
+        return this.service.getStock(sku)
     }
 }

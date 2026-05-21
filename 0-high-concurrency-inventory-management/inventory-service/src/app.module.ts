@@ -1,6 +1,6 @@
 /**
- * Module gốc — Kết nối DB, ConfigModule, và Feature Module.
- * (EN: Root module — DB connection, ConfigModule, and Feature Module.)
+ * Module gốc — Postgres biz demo + seed OnModuleInit + Redis.
+ * (EN: Root module — Postgres demo data + OnModuleInit seed + Redis.)
  */
 import {
     Module,
@@ -13,7 +13,9 @@ import {
     TypeOrmModule,
 } from "@nestjs/typeorm"
 import {
+    appConfig,
     databaseConfig,
+    redisConfig,
     type DatabaseConfig,
 } from "./config"
 import {
@@ -24,7 +26,7 @@ import {
     imports: [
         ConfigModule.forRoot({
             isGlobal: true,
-            load: [databaseConfig],
+            load: [appConfig, databaseConfig, redisConfig],
         }),
         TypeOrmModule.forRootAsync({
             imports: [ConfigModule],

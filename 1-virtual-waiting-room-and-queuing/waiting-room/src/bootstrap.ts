@@ -1,9 +1,16 @@
+/**
+ * Bootstrap Nest HTTP — ValidationPipe + listen 0.0.0.0.
+ * (EN: Nest HTTP bootstrap — ValidationPipe and listen on 0.0.0.0.)
+ */
 import {
     NestFactory,
 } from "@nestjs/core"
 import {
     ValidationPipe,
 } from "@nestjs/common"
+import {
+    ConfigService,
+} from "@nestjs/config"
 import {
     AppModule,
 } from "./app.module"
@@ -18,8 +25,7 @@ export async function bootstrap(): Promise<void> {
         whitelist: true,
         forbidUnknownValues: false,
     }))
-    const port = Number(process.env.PORT) || 3000
-    // Cổng: biến môi trường PORT hoặc 3000.
-    // (EN: Port from env PORT or default 3000.)
+    const configService = app.get(ConfigService)
+    const port = configService.get<number>("app.port") ?? 3000
     await app.listen(port, "0.0.0.0")
 }

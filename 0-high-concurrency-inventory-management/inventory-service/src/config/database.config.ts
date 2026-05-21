@@ -1,8 +1,12 @@
+/**
+ * Config `registerAs` — chỉ đọc `process.env` tại factory.
+ * (EN: Config `registerAs` — reads `process.env` in factory only.)
+ */
 import {
     registerAs,
 } from "@nestjs/config"
 
-export type DatabaseConfig = {
+export interface DatabaseConfig {
     host: string
     port: number
     username: string
@@ -14,7 +18,7 @@ export type DatabaseConfig = {
  * Cấu hình kết nối Postgres — namespace `database` cho ConfigService.
  * (EN: Postgres connection config — `database` namespace for ConfigService.)
  */
-export default registerAs(
+export const databaseConfig = registerAs(
     "database",
     (): DatabaseConfig => ({
         host: process.env.POSTGRES_HOST ?? "localhost",

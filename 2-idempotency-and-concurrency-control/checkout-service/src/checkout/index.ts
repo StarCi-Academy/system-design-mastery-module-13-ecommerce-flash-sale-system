@@ -1,9 +1,3 @@
-export {
-    CheckoutModule,
-} from "./checkout.module"
-export {
-    CheckoutService,
-} from "./checkout.service"
-export {
-    CheckoutController,
-} from "./checkout.controller"
+export * from "./checkout.controller"
+export * from "./checkout.module"
+export * from "./checkout.service"

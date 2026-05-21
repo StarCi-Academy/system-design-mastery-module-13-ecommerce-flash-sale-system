@@ -2,28 +2,18 @@ import {
     Module,
 } from "@nestjs/common"
 import {
-    TypeOrmModule,
-} from "@nestjs/typeorm"
-import {
-    WaitingroomEntity,
-} from "./entities"
+    WaitingroomController,
+} from "./waitingroom.controller"
 import {
     WaitingroomService,
 } from "./waitingroom.service"
-import {
-    WaitingroomController,
-} from "./waitingroom.controller"
 
 /**
- * Feature Module quản lý bài học Virtual Waiting Room and Queuing.
- * (EN: Feature Module managing lesson Virtual Waiting Room and Queuing.)
+ * Feature module — Redis ZSET waiting room.
+ * (EN: Feature module — Redis ZSET waiting room.)
  */
 @Module({
-    imports: [
-        TypeOrmModule.forFeature([WaitingroomEntity]),
-    ],
     controllers: [WaitingroomController],
     providers: [WaitingroomService],
-    exports: [WaitingroomService],
 })
 export class WaitingroomModule {}
