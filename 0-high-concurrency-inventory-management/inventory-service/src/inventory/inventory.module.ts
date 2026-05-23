@@ -12,9 +12,6 @@ import {
     InventoryController,
 } from "./inventory.controller"
 import {
-    InventorySeedService,
-} from "./inventory-seed.service"
-import {
     InventoryService,
 } from "./inventory.service"
 
@@ -25,6 +22,6 @@ import {
 @Module({
     imports: [TypeOrmModule.forFeature([InventoryItemEntity, InventoryLedgerEntity])],
     controllers: [InventoryController],
-    providers: [InventoryService, InventorySeedService],
+    providers: [InventoryService],
 })
 export class InventoryModule {}

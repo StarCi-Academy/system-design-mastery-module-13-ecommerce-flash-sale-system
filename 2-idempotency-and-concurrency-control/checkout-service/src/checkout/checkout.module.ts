@@ -11,9 +11,6 @@ import {
     CheckoutController,
 } from "./checkout.controller"
 import {
-    CheckoutSeedService,
-} from "./checkout-seed.service"
-import {
     CheckoutService,
 } from "./checkout.service"
 
@@ -24,6 +21,6 @@ import {
 @Module({
     imports: [TypeOrmModule.forFeature([OrderEntity])],
     controllers: [CheckoutController],
-    providers: [CheckoutService, CheckoutSeedService],
+    providers: [CheckoutService],
 })
 export class CheckoutModule {}

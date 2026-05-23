@@ -1,20 +1,19 @@
-name: 0-high-concurrency-inventory-management
+name: high-concurrency-inventory-management
 # Vi: Docker Compose stack cho bài học Quản lý tồn kho hiệu năng cao.
 # (EN: Docker Compose stack for lesson High-Concurrency Inventory Management.)
 
 services:
-  # NestJS API Service
-  api:
-    container_name: 0-high-concurrency-inventory-management-api
-    build:
-      context: ../inventory-service
-      dockerfile: Dockerfile
+  # NestJS API Service — Redis Lua pre-decrement + Postgres pessimistic lock + ledger.
+  # (EN: NestJS API service — Redis Lua pre-decrement + Postgres pessimistic lock + ledger.)
+  inventory-service:
+    image: starciacademy/system-design-high-concurrency-inventory-management-inventory-service:latest
+    container_name: high-concurrency-inventory-management-inventory-service
     ports:
-      # Ánh xạ cổng host 3000 → container 3000 (HTTP API).
-      # (EN: Map host port 3000 → container 3000 (HTTP API).)
-      - "3000:3000"
+      # Cổng host 3029 → container 3029 (HTTP API).
+      # (EN: Host port 3029 → container 3029 (HTTP API).)
+      - "3029:3029"
     environment:
-      - PORT=3000
+      - PORT=3029
       - POSTGRES_HOST=db
       - POSTGRES_PORT=5432
       - POSTGRES_USER=postgres
@@ -23,39 +22,50 @@ services:
       - REDIS_HOST=redis
       - REDIS_PORT=6379
     networks:
-      - 0-high-concurrency-inventory-management-network
+      - inventory-network
     depends_on:
-      - db
-      - redis
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
 
-  # Postgres — ledger / orders (TypeORM).
-  # (EN: Postgres — ledger / orders (TypeORM).)
+  # Postgres — durable ledger / items.
+  # (EN: Postgres — durable ledger / items.)
   db:
     image: postgres:16-alpine
-    container_name: 0-high-concurrency-inventory-management-db
+    container_name: high-concurrency-inventory-management-db
     environment:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres
       - POSTGRES_DB=inventory_service
-    ports:
-      # Postgres host 5432 (lab local).
-      # (EN: Postgres host port 5432 (local lab).)
-      - "5432:5432"
+    volumes:
+      # Mount seed SQL khởi tạo dữ liệu mẫu.
+      # (EN: Mount seed SQL for sample data initialization.)
+      - ../.sql/seed.sql:/docker-entrypoint-initdb.d/seed.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d inventory_service"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
     networks:
-      - 0-high-concurrency-inventory-management-network
+      - inventory-network
+    restart: unless-stopped
 
-  # Redis — counter / queue / idempotency registry.
-  # (EN: Redis — counter / queue / idempotency registry.)
+  # Redis — hot stock counter + Lua pre-decrement.
+  # (EN: Redis — hot stock counter + Lua pre-decrement.)
   redis:
     image: redis:7-alpine
-    container_name: 0-high-concurrency-inventory-management-redis
-    ports:
-      # Redis host 6379.
-      # (EN: Redis host port 6379.)
-      - "6379:6379"
+    container_name: high-concurrency-inventory-management-redis
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
     networks:
-      - 0-high-concurrency-inventory-management-network
+      - inventory-network
+    restart: unless-stopped
 
 networks:
-  0-high-concurrency-inventory-management-network:
-    name: 0-high-concurrency-inventory-management-network
+  inventory-network:
+    name: high-concurrency-inventory-management-network

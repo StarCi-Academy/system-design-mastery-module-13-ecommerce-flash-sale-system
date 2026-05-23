@@ -1,39 +1,42 @@
-name: 1-virtual-waiting-room-and-queuing
+name: virtual-waiting-room-and-queuing
 # Vi: Docker Compose stack cho bài học Phòng chờ ảo và Hàng đợi.
 # (EN: Docker Compose stack for lesson Virtual Waiting Room and Queuing.)
 
 services:
-  # NestJS API Service
-  api:
-    container_name: 1-virtual-waiting-room-and-queuing-api
-    build:
-      context: ../waiting-room
-      dockerfile: Dockerfile
+  # NestJS API — Redis ZSET queue + admitted SET.
+  # (EN: NestJS API — Redis ZSET queue + admitted SET.)
+  waiting-room:
+    image: starciacademy/system-design-virtual-waiting-room-and-queuing-waiting-room:latest
+    container_name: virtual-waiting-room-and-queuing-waiting-room
     ports:
-      # Ánh xạ cổng host 3000 → container 3000 (HTTP API).
-      # (EN: Map host port 3000 → container 3000 (HTTP API).)
-      - "3000:3000"
+      # Cổng host 3030 → container 3030.
+      # (EN: Host 3030 → container 3030.)
+      - "3030:3030"
     environment:
-      - PORT=3000
+      - PORT=3030
       - REDIS_HOST=redis
       - REDIS_PORT=6379
     networks:
-      - 1-virtual-waiting-room-and-queuing-network
+      - waiting-room-network
     depends_on:
-      - redis
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
 
-  # Redis — counter / queue / idempotency registry.
-  # (EN: Redis — counter / queue / idempotency registry.)
+  # Redis — ZSET queue + admitted SET.
+  # (EN: Redis — ZSET queue + admitted SET.)
   redis:
     image: redis:7-alpine
-    container_name: 1-virtual-waiting-room-and-queuing-redis
-    ports:
-      # Redis host 6379.
-      # (EN: Redis host port 6379.)
-      - "6379:6379"
+    container_name: virtual-waiting-room-and-queuing-redis
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
     networks:
-      - 1-virtual-waiting-room-and-queuing-network
+      - waiting-room-network
+    restart: unless-stopped
 
 networks:
-  1-virtual-waiting-room-and-queuing-network:
-    name: 1-virtual-waiting-room-and-queuing-network
+  waiting-room-network:
+    name: virtual-waiting-room-and-queuing-network

@@ -15,6 +15,7 @@ import {
 } from "@nestjs/typeorm"
 import Redis from "ioredis"
 import {
+    DataSource,
     Repository,
 } from "typeorm"
 import type {
@@ -45,21 +46,27 @@ export class InventoryService implements OnModuleInit, OnModuleDestroy {
         private readonly items: Repository<InventoryItemEntity>,
         @InjectRepository(InventoryLedgerEntity)
         private readonly ledgers: Repository<InventoryLedgerEntity>,
+        private readonly dataSource: DataSource,
     ) {}
 
     /**
-     * Logic — khởi tạo Redis client.
-     * Code — OnModuleInit → ioredis lazyConnect.
-     * (EN Logic: Initialize Redis client.)
-     * (EN Code: OnModuleInit → ioredis.)
+     * Logic — khởi tạo Redis client; đồng bộ stock:IPHONE15 từ Postgres sang Redis.
+     * Code — OnModuleInit → ioredis lazyConnect → SET stock:<sku> từ DB.
+     * (EN Logic: Initialize Redis client; sync stock:IPHONE15 from Postgres to Redis.)
+     * (EN Code: OnModuleInit → ioredis → SET stock:<sku> from DB row.)
      */
-    onModuleInit(): void {
+    async onModuleInit(): Promise<void> {
         const redis = this.config.getOrThrow<RedisConfig>("redis")
         this.redis = new Redis({
             host: redis.host,
             port: redis.port,
             lazyConnect: true,
         })
+        await this.connectRedis()
+        const row = await this.items.findOne({ where: { sku: "IPHONE15" } })
+        if (row) {
+            await this.redis.set(this.stockKey("IPHONE15"), String(row.stock))
+        }
     }
 
     /**
@@ -125,34 +132,36 @@ export class InventoryService implements OnModuleInit, OnModuleDestroy {
      * (EN Code: FOR UPDATE style lock → save.)
      */
     async decrementDb(sku: string, quantity: number) {
-        const item = await this.items.findOne({
-            where: { sku },
-            lock: { mode: "pessimistic_write" },
-        })
-        if (!item || item.stock < quantity) {
+        return this.dataSource.transaction(async (manager) => {
+            const item = await manager.findOne(InventoryItemEntity, {
+                where: { sku },
+                lock: { mode: "pessimistic_write" },
+            })
+            if (!item || item.stock < quantity) {
+                return {
+                    path: "postgres-pessimistic-lock",
+                    productSku: sku,
+                    quantity,
+                    remaining: item?.stock ?? 0,
+                    soldOut: true,
+                    lockType: "pessimistic-row",
+                    note: "Row lock blocks concurrent transactions — pool pressure under burst.",
+                }
+            }
+            item.stock -= quantity
+            await manager.save(InventoryItemEntity, item)
+            await this.connectRedis()
+            await this.redis.set(this.stockKey(sku), String(item.stock))
             return {
                 path: "postgres-pessimistic-lock",
                 productSku: sku,
                 quantity,
-                remaining: item?.stock ?? 0,
-                soldOut: true,
+                remaining: item.stock,
+                soldOut: item.stock === 0,
                 lockType: "pessimistic-row",
-                note: "Row lock blocks concurrent transactions — pool pressure under burst.",
+                dbStock: item.stock,
             }
-        }
-        item.stock -= quantity
-        await this.items.save(item)
-        await this.connectRedis()
-        await this.redis.set(this.stockKey(sku), String(item.stock))
-        return {
-            path: "postgres-pessimistic-lock",
-            productSku: sku,
-            quantity,
-            remaining: item.stock,
-            soldOut: item.stock === 0,
-            lockType: "pessimistic-row",
-            dbStock: item.stock,
-        }
+        })
     }
 
     /**

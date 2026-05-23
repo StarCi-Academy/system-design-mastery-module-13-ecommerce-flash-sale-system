@@ -1,20 +1,19 @@
-name: 2-idempotency-and-concurrency-control
+name: idempotency-and-concurrency-control
 # Vi: Docker Compose stack cho bài học Idempotency và Kiểm soát đồng thời.
 # (EN: Docker Compose stack for lesson Idempotency and Concurrency Control.)
 
 services:
-  # NestJS API Service
-  api:
-    container_name: 2-idempotency-and-concurrency-control-api
-    build:
-      context: ../checkout-service
-      dockerfile: Dockerfile
+  # NestJS API — Idempotency-Key + Postgres unique constraint.
+  # (EN: NestJS API — Idempotency-Key + Postgres unique constraint.)
+  checkout-service:
+    image: starciacademy/system-design-idempotency-and-concurrency-control-checkout-service:latest
+    container_name: idempotency-and-concurrency-control-checkout-service
     ports:
-      # Ánh xạ cổng host 3000 → container 3000 (HTTP API).
-      # (EN: Map host port 3000 → container 3000 (HTTP API).)
-      - "3000:3000"
+      # Cổng host 3031 → container 3031.
+      # (EN: Host 3031 → container 3031.)
+      - "3031:3031"
     environment:
-      - PORT=3000
+      - PORT=3031
       - POSTGRES_HOST=db
       - POSTGRES_PORT=5432
       - POSTGRES_USER=postgres
@@ -23,39 +22,46 @@ services:
       - REDIS_HOST=redis
       - REDIS_PORT=6379
     networks:
-      - 2-idempotency-and-concurrency-control-network
+      - checkout-network
     depends_on:
-      - db
-      - redis
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
 
-  # Postgres — ledger / orders (TypeORM).
-  # (EN: Postgres — ledger / orders (TypeORM).)
+  # Postgres — orders table + unique idempotency_key.
+  # (EN: Postgres — orders table + unique idempotency_key.)
   db:
     image: postgres:16-alpine
-    container_name: 2-idempotency-and-concurrency-control-db
+    container_name: idempotency-and-concurrency-control-db
     environment:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres
       - POSTGRES_DB=checkout_service
-    ports:
-      # Postgres host 5432 (lab local).
-      # (EN: Postgres host port 5432 (local lab).)
-      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d checkout_service"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
     networks:
-      - 2-idempotency-and-concurrency-control-network
+      - checkout-network
+    restart: unless-stopped
 
-  # Redis — counter / queue / idempotency registry.
-  # (EN: Redis — counter / queue / idempotency registry.)
+  # Redis — idempotency PENDING lock + result cache.
+  # (EN: Redis — idempotency PENDING lock + result cache.)
   redis:
     image: redis:7-alpine
-    container_name: 2-idempotency-and-concurrency-control-redis
-    ports:
-      # Redis host 6379.
-      # (EN: Redis host port 6379.)
-      - "6379:6379"
+    container_name: idempotency-and-concurrency-control-redis
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
     networks:
-      - 2-idempotency-and-concurrency-control-network
+      - checkout-network
+    restart: unless-stopped
 
 networks:
-  2-idempotency-and-concurrency-control-network:
-    name: 2-idempotency-and-concurrency-control-network
+  checkout-network:
+    name: idempotency-and-concurrency-control-network

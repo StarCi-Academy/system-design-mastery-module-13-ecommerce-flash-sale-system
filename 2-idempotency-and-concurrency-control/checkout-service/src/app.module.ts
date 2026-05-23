@@ -1,6 +1,6 @@
 /**
- * Module gốc — Postgres biz demo + seed OnModuleInit + Redis.
- * (EN: Root module — Postgres demo data + OnModuleInit seed + Redis.)
+ * Module gốc — Postgres biz demo + Redis.
+ * (EN: Root module — Postgres demo data + Redis.)
  */
 import {
     Module,
