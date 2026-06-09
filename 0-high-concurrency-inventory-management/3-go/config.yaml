@@ -1,0 +1,9 @@
+# Default config for local runs. Docker Compose overrides via environment variables.
+port: "3029"
+redis_host: localhost
+redis_port: "6379"
+postgres_host: localhost
+postgres_port: "5432"
+postgres_user: postgres
+postgres_password: postgres
+postgres_db: inventory_service

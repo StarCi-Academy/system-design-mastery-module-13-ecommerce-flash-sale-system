@@ -1,0 +1,25 @@
+name: waiting-room-java
+
+services:
+  waiting-room:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    ports:
+      - "3030:3030"
+    environment:
+      - PORT=3030
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - ADMITTED_TTL_SEC=300
+    depends_on:
+      redis:
+        condition: service_healthy
+
+  redis:
+    image: redis:7-alpine
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10

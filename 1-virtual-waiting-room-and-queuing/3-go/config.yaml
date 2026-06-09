@@ -1,0 +1,4 @@
+port: "3030"
+redisHost: "localhost"
+redisPort: 6379
+admittedTtlSec: 300

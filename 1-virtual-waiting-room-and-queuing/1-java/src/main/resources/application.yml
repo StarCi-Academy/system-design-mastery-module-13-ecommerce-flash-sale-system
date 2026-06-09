@@ -1,0 +1,9 @@
+server:
+  port: ${PORT:3030}
+
+app:
+  redis:
+    host: ${REDIS_HOST:localhost}
+    port: ${REDIS_PORT:6379}
+  admitted:
+    ttl-seconds: ${ADMITTED_TTL_SEC:300}
